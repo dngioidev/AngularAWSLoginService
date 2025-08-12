@@ -1,0 +1,235 @@
+<div class="token-demo-container">
+  <div class="token-demo-card">
+    <div class="demo-header">
+      <h2>🔄 Token Refresh Demo</h2>
+      <p>Explore and understand AWS Cognito token refresh mechanisms</p>
+    </div>
+    
+    <!-- Current Tokens Section -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3>📊 Current Token Status</h3>
+        <p>Real-time view of your authentication tokens</p>
+      </div>
+      
+      <div class="tokens-grid">
+        <div *ngFor="let token of currentTokens" class="token-card">
+          <div class="token-header">
+            <h4>{{ token.type }}</h4>
+            <span class="token-status" [ngClass]="getTokenStatusClass(token)">
+              {{ getTokenStatus(token) }}
+            </span>
+          </div>
+          
+          <div class="token-details">
+            <div class="detail-item" *ngIf="token.expiresAt">
+              <label>Expires At:</label>
+              <span>{{ token.expiresAt | date:'medium' }}</span>
+            </div>
+            
+            <div class="detail-item" *ngIf="token.timeUntilExpiry">
+              <label>Time Until Expiry:</label>
+              <span [ngClass]="{'expiring-soon': getTokenStatus(token) === 'Expiring Soon'}">
+                {{ token.timeUntilExpiry }}
+              </span>
+            </div>
+            
+            <div class="detail-item" *ngIf="token.decoded">
+              <label>Key Claims:</label>
+              <div class="claims-list">
+                <div *ngIf="token.decoded.sub" class="claim">
+                  <strong>Subject:</strong> {{ token.decoded.sub }}
+                </div>
+                <div *ngIf="token.decoded.email" class="claim">
+                  <strong>Email:</strong> {{ token.decoded.email }}
+                </div>
+                <div *ngIf="token.decoded.token_use" class="claim">
+                  <strong>Token Use:</strong> {{ token.decoded.token_use }}
+                </div>
+                <div *ngIf="token.decoded.aud" class="claim">
+                  <strong>Audience:</strong> {{ token.decoded.aud }}
+                </div>
+                <div *ngIf="token.decoded.iss" class="claim">
+                  <strong>Issuer:</strong> {{ token.decoded.iss }}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="token-actions">
+            <button 
+              class="btn btn-secondary btn-sm" 
+              (click)="copyToClipboard(token.value || '')"
+              [disabled]="!token.value"
+              title="Copy raw token">
+              📋 Copy Token
+            </button>
+            
+            <button 
+              class="btn btn-secondary btn-sm" 
+              (click)="copyTokenPayload(token)"
+              [disabled]="!token.decoded"
+              title="Copy decoded payload">
+              🔍 Copy Payload
+            </button>
+          </div>
+          
+          <div class="token-preview" *ngIf="token.decoded">
+            <pre>{{ formatJSON(token.decoded) }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Refresh Actions Section -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3>🔄 Token Refresh Actions</h3>
+        <p>Test manual and automatic token refresh functionality</p>
+      </div>
+      
+      <div class="refresh-controls">
+        <div class="control-group">
+          <button 
+            class="btn btn-primary" 
+            (click)="performRefresh()"
+            [disabled]="isLoading">
+            <span *ngIf="isLoading" class="spinner"></span>
+            {{ isLoading ? 'Refreshing...' : '🔄 Manual Refresh' }}
+          </button>
+          
+          <button 
+            class="btn" 
+            [ngClass]="autoRefreshEnabled ? 'btn-danger' : 'btn-success'"
+            (click)="toggleAutoRefresh()">
+            {{ autoRefreshEnabled ? '⏹️ Stop Auto-Refresh' : '▶️ Start Auto-Refresh' }}
+          </button>
+        </div>
+        
+        <div *ngIf="autoRefreshEnabled" class="auto-refresh-status">
+          <div class="countdown-display">
+            <h4>⏰ Auto-refresh in: {{ autoRefreshCountdown }}s</h4>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="(autoRefreshCountdown / 30) * 100"></div>
+            </div>
+          </div>
+        </div>
+        
+        <button 
+          *ngIf="refreshResult" 
+          class="btn btn-secondary"
+          (click)="clearResults()">
+          🧹 Clear Results
+        </button>
+      </div>
+      
+      <div *ngIf="error" class="error-message">
+        ❌ {{ error }}
+      </div>
+    </div>
+    
+    <!-- Refresh Results Section -->
+    <div *ngIf="refreshResult" class="section-card">
+      <div class="section-header">
+        <h3>📋 Latest Refresh Results</h3>
+        <p>Before and after comparison of token refresh</p>
+      </div>
+      
+      <div class="refresh-status" [class.success]="refreshResult.success" [class.failed]="!refreshResult.success">
+        <h4>{{ refreshResult.success ? '✅ Token Refresh Successful' : '❌ Token Refresh Failed' }}</h4>
+        <p *ngIf="!refreshResult.success && refreshResult.error">{{ refreshResult.error }}</p>
+      </div>
+      
+      <div *ngIf="refreshResult.success" class="tokens-comparison">
+        <div class="comparison-section">
+          <h4>🔴 Old Tokens</h4>
+          
+          <div class="comparison-token" *ngIf="refreshResult.oldTokens?.accessToken">
+            <label>Access Token:</label>
+            <div class="token-value">
+              <code>{{ refreshResult.oldTokens.accessToken }}</code>
+              <button class="copy-btn" (click)="copyToClipboard(refreshResult.oldTokens.accessToken)">📋</button>
+            </div>
+          </div>
+          
+          <div class="comparison-token" *ngIf="refreshResult.oldTokens?.idToken">
+            <label>ID Token:</label>
+            <div class="token-value">
+              <code>{{ refreshResult.oldTokens.idToken }}</code>
+              <button class="copy-btn" (click)="copyToClipboard(refreshResult.oldTokens.idToken)">📋</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="comparison-section">
+          <h4>🟢 New Tokens</h4>
+          
+          <div class="comparison-token" *ngIf="refreshResult.newTokens?.accessToken">
+            <label>Access Token:</label>
+            <div class="token-value">
+              <code>{{ refreshResult.newTokens.accessToken }}</code>
+              <button class="copy-btn" (click)="copyToClipboard(refreshResult.newTokens.accessToken)">📋</button>
+            </div>
+          </div>
+          
+          <div class="comparison-token" *ngIf="refreshResult.newTokens?.idToken">
+            <label>ID Token:</label>
+            <div class="token-value">
+              <code>{{ refreshResult.newTokens.idToken }}</code>
+              <button class="copy-btn" (click)="copyToClipboard(refreshResult.newTokens.idToken)">📋</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Information Section -->
+    <div class="section-card info-section">
+      <div class="section-header">
+        <h3>💡 Understanding Token Refresh</h3>
+        <p>Learn how AWS Cognito token refresh works</p>
+      </div>
+      
+      <div class="info-content">
+        <div class="info-item">
+          <h4>🔑 Access Tokens</h4>
+          <p>Short-lived tokens (typically 1 hour) used to access AWS resources. These expire frequently and need to be refreshed.</p>
+        </div>
+        
+        <div class="info-item">
+          <h4>🆔 ID Tokens</h4>
+          <p>Contains user identity information and claims. Also short-lived and refreshed along with access tokens.</p>
+        </div>
+        
+        <div class="info-item">
+          <h4>🔄 Refresh Tokens</h4>
+          <p>Long-lived tokens (typically 30 days) used to obtain new access and ID tokens. These are securely stored and used automatically.</p>
+        </div>
+        
+        <div class="info-item">
+          <h4>⚙️ Refresh Process</h4>
+          <ul>
+            <li>1. System detects token expiry (or manual trigger)</li>
+            <li>2. Sends refresh token to AWS Cognito</li>
+            <li>3. Receives new access and ID tokens</li>
+            <li>4. Updates localStorage with new tokens</li>
+            <li>5. Application continues with new tokens</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Navigation -->
+    <div class="actions-section">
+      <div class="action-buttons">
+        <button class="btn btn-secondary" (click)="goBack()">
+          🏠 Back to Home
+        </button>
+        
+        <button class="btn btn-primary" (click)="loadCurrentTokens()">
+          🔄 Refresh Display
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

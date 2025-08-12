@@ -1,0 +1,329 @@
+<div class="cognito-config-container">
+  <div class="config-header">
+    <div class="header-content">
+      <h2>AWS Cognito Configuration Management</h2>
+      <p>Manage your AWS Cognito environment settings with testing and release capabilities</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" routerLink="/login">
+        ← Back to Login
+      </button>
+    </div>
+  </div>
+
+  <div class="config-tabs">
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'configure'"
+      (click)="activeTab = 'configure'">
+      Configure
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'test'"
+      (click)="activeTab = 'test'">
+      Test
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'history'"
+      (click)="activeTab = 'history'">
+      History
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'import-export'"
+      (click)="activeTab = 'import-export'">
+      Import/Export
+    </button>
+  </div>
+
+  <!-- Configuration Tab -->
+  <div *ngIf="activeTab === 'configure'" class="tab-content">
+    <div class="current-config-info">
+      <h3>Current Configuration</h3>
+      <div class="config-info-grid" *ngIf="currentConfig">
+        <div class="info-item">
+          <span class="label">Region:</span>
+          <span class="value">{{ currentConfig.region }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">User Pool ID:</span>
+          <span class="value">{{ currentConfig.userPoolId }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Client ID:</span>
+          <span class="value">{{ currentConfig.userPoolClientId }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Domain:</span>
+          <span class="value">{{ currentConfig.domain }}</span>
+        </div>
+      </div>
+    </div>
+
+    <form [formGroup]="configForm" class="config-form">
+      <h3>Update Configuration</h3>
+      
+      <div class="form-group">
+        <label for="region">AWS Region *</label>
+        <input 
+          id="region"
+          type="text" 
+          formControlName="region" 
+          placeholder="e.g., ap-southeast-1"
+          class="form-control">
+        <div *ngIf="configForm.get('region')?.invalid && configForm.get('region')?.touched" class="error-message">
+          Region is required
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="userPoolId">User Pool ID *</label>
+        <input 
+          id="userPoolId"
+          type="text" 
+          formControlName="userPoolId" 
+          placeholder="e.g., ap-southeast-1_xxxxxxxxx"
+          class="form-control">
+        <div *ngIf="configForm.get('userPoolId')?.invalid && configForm.get('userPoolId')?.touched" class="error-message">
+          User Pool ID is required
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="userPoolClientId">User Pool Client ID *</label>
+        <input 
+          id="userPoolClientId"
+          type="text" 
+          formControlName="userPoolClientId" 
+          placeholder="Client ID"
+          class="form-control">
+        <div *ngIf="configForm.get('userPoolClientId')?.invalid && configForm.get('userPoolClientId')?.touched" class="error-message">
+          User Pool Client ID is required
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="identityPoolId">Identity Pool ID</label>
+        <input 
+          id="identityPoolId"
+          type="text" 
+          formControlName="identityPoolId" 
+          placeholder="e.g., ap-southeast-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="domain">Cognito Domain</label>
+        <input 
+          id="domain"
+          type="text" 
+          formControlName="domain" 
+          placeholder="e.g., your-domain.auth.region.amazoncognito.com"
+          class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="clientSecret">Client Secret</label>
+        <input 
+          id="clientSecret"
+          type="password" 
+          formControlName="clientSecret" 
+          placeholder="Client Secret (if applicable)"
+          class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="s3BucketName">S3 Bucket Name</label>
+        <input 
+          id="s3BucketName"
+          type="text" 
+          formControlName="s3BucketName" 
+          placeholder="S3 Bucket for storage"
+          class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="s3Region">S3 Region</label>
+        <input 
+          id="s3Region"
+          type="text" 
+          formControlName="s3Region" 
+          placeholder="S3 Region"
+          class="form-control">
+      </div>
+
+      <div class="form-actions">
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="resetForm()">
+          Reset
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          [disabled]="configForm.invalid || isLoading"
+          (click)="saveConfiguration()">
+          <span *ngIf="isLoading" class="spinner"></span>
+          Save Configuration
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Test Tab -->
+  <div *ngIf="activeTab === 'test'" class="tab-content">
+    <h3>Test Configuration</h3>
+    <p>Test your configuration before applying it to the live environment.</p>
+    
+    <div class="test-section">
+      <div class="test-form">
+        <div class="form-group">
+          <label for="testUsername">Test Username</label>
+          <input 
+            id="testUsername"
+            type="text" 
+            [(ngModel)]="testCredentials.username"
+            placeholder="Enter test username"
+            class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="testPassword">Test Password</label>
+          <input 
+            id="testPassword"
+            type="password" 
+            [(ngModel)]="testCredentials.password"
+            placeholder="Enter test password"
+            class="form-control">
+        </div>
+        <button 
+          class="btn btn-test"
+          [disabled]="isTestingConnection || !testCredentials.username || !testCredentials.password"
+          (click)="testConnection()">
+          <span *ngIf="isTestingConnection" class="spinner"></span>
+          Test Connection
+        </button>
+      </div>
+
+      <div class="test-results" *ngIf="testResult">
+        <h4>Test Results</h4>
+        <div class="result-item" [class.success]="testResult.success" [class.error]="!testResult.success">
+          <strong>Status:</strong> {{ testResult.success ? 'Success' : 'Failed' }}
+        </div>
+        <div class="result-item">
+          <strong>Message:</strong> {{ testResult.message }}
+        </div>
+        <div class="result-item" *ngIf="testResult.details">
+          <strong>Details:</strong>
+          <pre>{{ testResult.details | json }}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="release-section" *ngIf="testResult?.success">
+      <h4>Release Configuration</h4>
+      <p>Your configuration test was successful. You can now release it to the live environment.</p>
+      <button 
+        class="btn btn-success"
+        [disabled]="isLoading"
+        (click)="releaseConfiguration()">
+        <span *ngIf="isLoading" class="spinner"></span>
+        Release to Production
+      </button>
+    </div>
+  </div>
+
+  <!-- History Tab -->
+  <div *ngIf="activeTab === 'history'" class="tab-content">
+    <h3>Configuration History</h3>
+    <p>View and manage your configuration history with rollback capabilities.</p>
+    
+    <div class="history-list" *ngIf="configHistory.length > 0; else noHistory">
+      <div 
+        class="history-item" 
+        *ngFor="let config of configHistory; let i = index"
+        [class.current]="i === 0">
+        <div class="history-header">
+          <div class="history-info">
+            <strong>{{ config.timestamp | date:'medium' }}</strong>
+            <span class="status-badge" [class]="config.status">{{ config.status }}</span>
+          </div>
+          <div class="history-actions">
+            <button 
+              class="btn btn-small btn-secondary"
+              (click)="viewConfiguration(config)">
+              View
+            </button>
+            <button 
+              class="btn btn-small btn-primary"
+              *ngIf="i !== 0"
+              [disabled]="isLoading"
+              (click)="rollbackToConfiguration(config)">
+              Rollback
+            </button>
+          </div>
+        </div>
+        <div class="history-details">
+          <div class="config-summary">
+            <span>Region: {{ config.region }}</span>
+            <span>Pool: {{ config.userPoolId }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noHistory>
+      <div class="no-history">
+        <p>No configuration history available.</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Import/Export Tab -->
+  <div *ngIf="activeTab === 'import-export'" class="tab-content">
+    <h3>Import/Export Configuration</h3>
+    
+    <div class="import-export-section">
+      <div class="export-section">
+        <h4>Export Configuration</h4>
+        <p>Export your current configuration for backup or sharing.</p>
+        <button 
+          class="btn btn-secondary"
+          (click)="exportConfiguration()">
+          Export Current Config
+        </button>
+      </div>
+
+      <div class="import-section">
+        <h4>Import Configuration</h4>
+        <p>Import a configuration from a JSON file.</p>
+        <input 
+          type="file" 
+          #fileInput
+          accept=".json"
+          (change)="onFileSelected($event)"
+          class="file-input">
+        <button 
+          class="btn btn-primary"
+          [disabled]="!selectedFile || isLoading"
+          (click)="importConfiguration()">
+          <span *ngIf="isLoading" class="spinner"></span>
+          Import Configuration
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Messages -->
+  <div class="status-messages" *ngIf="statusMessage">
+    <div 
+      class="status-message"
+      [class.success]="statusMessage.type === 'success'"
+      [class.error]="statusMessage.type === 'error'"
+      [class.info]="statusMessage.type === 'info'">
+      {{ statusMessage.text }}
+    </div>
+  </div>
+</div>

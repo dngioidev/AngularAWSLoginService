@@ -1,0 +1,182 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h2>S3 File Upload</h2>
+      <p>Upload files with automated processing based on type</p>
+    </div>
+
+    <form [formGroup]="uploadForm" (ngSubmit)="onUpload()" class="auth-form">
+      <!-- Action Type Selection -->
+      <div class="form-group">
+        <label for="action">Upload Type *</label>
+        <select formControlName="action" id="action" class="form-control" required>
+          <option value="">Select upload type...</option>
+          <option *ngFor="let type of actionTypes" [value]="type.value">
+            {{ type.label }}
+          </option>
+        </select>
+        <small class="form-text text-muted">{{ getActionDescription() }}</small>
+        <div *ngIf="uploadForm.get('action')?.invalid && uploadForm.get('action')?.touched" class="error-message">
+          Upload type is required
+        </div>
+      </div>
+
+      <!-- Project ID (required for all types) -->
+      <div class="form-group" *ngIf="uploadForm.get('action')?.value">
+        <label for="projectId">Project ID *</label>
+        <input
+          type="text"
+          formControlName="projectId"
+          id="projectId"
+          class="form-control"
+          placeholder="Enter project ID"
+          [class.is-invalid]="uploadForm.get('projectId')?.invalid && uploadForm.get('projectId')?.touched"
+        />
+        <div *ngIf="uploadForm.get('projectId')?.invalid && uploadForm.get('projectId')?.touched" class="error-message">
+          Project ID is required
+        </div>
+      </div>
+
+      <!-- Job ID (required for job uploads) -->
+      <div class="form-group" *ngIf="uploadForm.get('action')?.value === 'job'">
+        <label for="jobId">Job ID *</label>
+        <input
+          type="text"
+          formControlName="jobId"
+          id="jobId"
+          class="form-control"
+          placeholder="Enter job ID"
+          [class.is-invalid]="uploadForm.get('jobId')?.invalid && uploadForm.get('jobId')?.touched"
+        />
+        <div *ngIf="uploadForm.get('jobId')?.invalid && uploadForm.get('jobId')?.touched" class="error-message">
+          Job ID is required for job uploads
+        </div>
+      </div>
+
+      <!-- Report ID (required for report uploads) -->
+      <div class="form-group" *ngIf="uploadForm.get('action')?.value === 'report'">
+        <label for="reportId">Report ID *</label>
+        <input
+          type="text"
+          formControlName="reportId"
+          id="reportId"
+          class="form-control"
+          placeholder="Enter report ID"
+          [class.is-invalid]="uploadForm.get('reportId')?.invalid && uploadForm.get('reportId')?.touched"
+        />
+        <div *ngIf="uploadForm.get('reportId')?.invalid && uploadForm.get('reportId')?.touched" class="error-message">
+          Report ID is required for report uploads
+        </div>
+      </div>
+
+      <!-- User ID (auto-filled) -->
+      <div class="form-group">
+        <label for="userId">User ID</label>
+        <input
+          type="text"
+          formControlName="userId"
+          id="userId"
+          class="form-control"
+          readonly
+        />
+      </div>
+
+      <!-- File Selection -->
+      <div class="form-group">
+        <label for="fileInput">Select File *</label>
+        <input
+          type="file"
+          id="fileInput"
+          class="form-control"
+          (change)="onFileSelected($event)"
+          [accept]="uploadForm.get('action')?.value === 'quotation' ? '.xlsx,.xls,.csv' : 'image/*'"
+        />
+        <small class="form-text text-muted">
+          <span *ngIf="uploadForm.get('action')?.value === 'quotation'">
+            Supported formats: .xlsx, .xls, .csv
+          </span>
+          <span *ngIf="uploadForm.get('action')?.value === 'job' || uploadForm.get('action')?.value === 'report'">
+            Supported formats: .jpg, .jpeg, .png, .gif, .bmp, .webp
+          </span>
+        </small>
+      </div>
+
+      <!-- Selected File Info -->
+      <div *ngIf="selectedFile" class="file-info">
+        <div class="file-details">
+          <strong>Selected File:</strong> {{ selectedFile.name }}<br>
+          <strong>Size:</strong> {{ formatFileSize(selectedFile.size) }}<br>
+          <strong>Type:</strong> {{ selectedFile.type }}
+        </div>
+        
+        <!-- Image Preview -->
+        <div *ngIf="imagePreviewUrl" class="image-preview">
+          <h4>Preview:</h4>
+          <img [src]="imagePreviewUrl" [alt]="selectedFile.name" class="preview-image">
+        </div>
+      </div>
+
+      <!-- Upload Progress -->
+      <div *ngIf="uploadProgress" class="upload-progress">
+        <div class="progress-bar">
+          <div 
+            class="progress-fill" 
+            [style.width.%]="uploadProgress.percentage">
+          </div>
+        </div>
+        <div class="progress-text">
+          {{ uploadProgress.percentage.toFixed(1) }}% 
+          ({{ formatFileSize(uploadProgress.loaded) }} / {{ formatFileSize(uploadProgress.total) }})
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Success Message -->
+      <div *ngIf="uploadResult" class="success-message">
+        {{ uploadResult }}
+      </div>
+
+      <!-- Expected Processed Paths -->
+      <div *ngIf="processedPaths" class="processed-paths">
+        <h4>Expected Processed File Paths:</h4>
+        <div *ngIf="processedPaths.results" class="path-item">
+          <strong>Processed Data:</strong> {{ processedPaths.results }}
+        </div>
+        <div *ngIf="processedPaths.compressed" class="path-item">
+          <strong>Compressed:</strong> {{ processedPaths.compressed }}
+        </div>
+        <div *ngIf="processedPaths.thumbnail" class="path-item">
+          <strong>Thumbnail:</strong> {{ processedPaths.thumbnail }}
+        </div>
+      </div>
+
+      <!-- Upload Button -->
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        [disabled]="!selectedFile || !uploadForm.valid || isUploading"
+      >
+        <span *ngIf="isUploading">
+          <i class="spinner"></i> Uploading...
+        </span>
+        <span *ngIf="!isUploading">
+          <i class="upload-icon">📤</i> Upload File
+        </span>
+      </button>
+
+      <!-- Reset Button -->
+      <button 
+        type="button" 
+        class="btn btn-secondary"
+        (click)="uploadForm.reset(); selectedFile = null; uploadResult = null; errorMessage = null; processedPaths = null; imagePreviewUrl = null"
+        [disabled]="isUploading"
+      >
+        Reset
+      </button>
+    </form>
+  </div>
+</div>

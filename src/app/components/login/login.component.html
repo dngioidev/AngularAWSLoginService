@@ -1,0 +1,89 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>Welcome Back</h1>
+      <p>Sign in to your account</p>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Login Form -->
+    <form (ngSubmit)="onSubmit()" class="auth-form">
+      <!-- Username Field -->
+      <div class="form-group">
+        <label for="username" class="form-label">Username or Email</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          [(ngModel)]="username"
+          (input)="clearError()"
+          class="form-input"
+          placeholder="Enter your username or email"
+          [disabled]="isLoading"
+          required
+        />
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          [(ngModel)]="password"
+          (input)="clearError()"
+          class="form-input"
+          placeholder="Enter your password"
+          [disabled]="isLoading"
+          required
+        />
+      </div>
+
+      <!-- Sign In Button -->
+      <button
+        type="submit"
+        class="btn btn-primary w-100"
+        [disabled]="isLoading || !username || !password"
+      >
+        <span *ngIf="isLoading" class="spinner"></span>
+        {{ isLoading ? 'Signing In...' : 'Sign In' }}
+      </button>
+    </form>
+
+    <!-- Divider -->
+    <div class="divider">
+      <span>or</span>
+    </div>
+
+    <!-- Microsoft Sign In -->
+    <button
+      type="button"
+      class="btn btn-microsoft w-100"
+      (click)="onFederatedSignIn()"
+      [disabled]="isLoading"
+    >
+      <span *ngIf="isLoading" class="spinner"></span>
+      <svg *ngIf="!isLoading" class="microsoft-icon" viewBox="0 0 23 23">
+        <path fill="#f35325" d="M1 1h10v10H1z"/>
+        <path fill="#81bc06" d="M12 1h10v10H12z"/>
+        <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+        <path fill="#ffba08" d="M12 12h10v10H12z"/>
+      </svg>
+      {{ isLoading ? 'Redirecting...' : 'Sign in with Microsoft' }}
+    </button>
+
+    <!-- Additional Links -->
+    <div class="login-footer">
+      <p>Don't have an account? <a href="#" class="link">Sign up</a></p>
+      <p><a routerLink="/forgot-password" class="link">Forgot your password?</a></p>
+      <p><a routerLink="/verify-email" class="link">Need to verify your email?</a></p>
+      <p><a routerLink="/debug" class="link" style="color: #ff6b35;">🔧 Debug Console</a></p>
+      <p><a routerLink="/cognito-config" class="link" style="color: #3498db;">⚙️ Configuration Manager</a></p>
+    </div>
+  </div>
+</div>

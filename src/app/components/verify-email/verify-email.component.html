@@ -1,0 +1,138 @@
+<div class="verify-email-container">
+  <div class="verify-email-card">
+    <div class="verify-email-header">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </div>
+      <h1>{{ fromFailedLogin ? 'Account Not Verified' : 'Verify Your Email' }}</h1>
+      <p *ngIf="!fromFailedLogin">Enter the verification code sent to your email address</p>
+      <p *ngIf="fromFailedLogin">Your account exists but your email address hasn't been verified. Please enter the verification code that was sent to your email when you registered.</p>
+    </div>
+
+    <!-- Info Message for Failed Login -->
+    <div *ngIf="fromFailedLogin && !errorMessage && !successMessage" class="info-message">
+      <svg class="info-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+      </svg>
+      You need to verify your email address before you can sign in. Check your email for the verification code.
+    </div>
+
+    <!-- Success Message -->
+    <div *ngIf="successMessage" class="success-message">
+      <svg class="success-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="error-message">
+      <svg class="error-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      {{ errorMessage }}
+    </div>
+
+    <!-- Verification Form -->
+    <form (ngSubmit)="onSubmit()" class="verify-email-form" *ngIf="!successMessage">
+      <!-- Username Field -->
+      <div class="form-group">
+        <label for="username" class="form-label">Username or Email</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          [(ngModel)]="username"
+          (input)="clearMessages()"
+          class="form-input"
+          placeholder="Enter your username or email"
+          [disabled]="isLoading"
+          required
+        />
+      </div>
+
+      <!-- Confirmation Code Field -->
+      <div class="form-group">
+        <label for="confirmationCode" class="form-label">Verification Code</label>
+        <input
+          type="text"
+          id="confirmationCode"
+          name="confirmationCode"
+          [(ngModel)]="confirmationCode"
+          (input)="clearMessages()"
+          class="form-input code-input"
+          placeholder="Enter 6-digit code"
+          maxlength="6"
+          [disabled]="isLoading"
+          required
+        />
+        <small class="form-hint">Check your email for the 6-digit verification code</small>
+      </div>
+
+      <!-- Verify Button -->
+      <button
+        type="submit"
+        class="btn btn-primary w-100"
+        [disabled]="isLoading || !username || !confirmationCode"
+      >
+        <span *ngIf="isLoading" class="spinner"></span>
+        {{ isLoading ? 'Verifying...' : 'Verify Email' }}
+      </button>
+
+      <!-- Already Verified Button -->
+      <button
+        type="button"
+        class="btn btn-secondary w-100"
+        (click)="tryDirectLogin()"
+        [disabled]="isLoading"
+        style="margin-top: 1rem;"
+      >
+        Already Verified? Try to Sign In
+      </button>
+    </form>
+
+    <!-- Action Links -->
+    <div class="verify-email-footer" *ngIf="!successMessage">
+      <div class="resend-section">
+        <p>Didn't receive the code?</p>
+        <button
+          type="button"
+          class="btn btn-link"
+          (click)="resendCode()"
+          [disabled]="isLoading || !username"
+        >
+          <span *ngIf="isLoading" class="spinner-small"></span>
+          {{ isLoading ? 'Sending...' : 'Resend Code' }}
+        </button>
+      </div>
+      
+      <div class="divider">
+        <span>or</span>
+      </div>
+      
+      <button
+        type="button"
+        class="btn btn-secondary w-100"
+        (click)="goToLogin()"
+        [disabled]="isLoading"
+      >
+        Back to Sign In
+      </button>
+    </div>
+
+    <!-- Success Footer -->
+    <div class="verify-email-footer" *ngIf="successMessage">
+      <p class="redirect-text">Redirecting to sign in page...</p>
+      <button
+        type="button"
+        class="btn btn-primary w-100"
+        (click)="goToLogin()"
+      >
+        Sign In Now
+      </button>
+    </div>
+  </div>
+</div>
